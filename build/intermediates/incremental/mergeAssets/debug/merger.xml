@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merger version="2" >
+
+    <dataSet config="main" >
+        <source path="/Users/junhzhan/workspace/Cal/assets" >
+            <file
+                name="Helvetica.ttf"
+                path="/Users/junhzhan/workspace/Cal/assets/Helvetica.ttf" />
+        </source>
+    </dataSet>
+    <dataSet config="debug" >
+        <source path="/Users/junhzhan/workspace/Cal/build-types/debug/assets" />
+    </dataSet>
+
+</merger>

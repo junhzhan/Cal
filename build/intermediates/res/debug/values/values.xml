@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- From: file:/Users/junhzhan/workspace/Cal/res/values/dimen.xml -->
+    <eat-comment />
+
+    <dimen name="calendar_date_text_size">26dp</dimen>
+    <dimen name="calendar_day_of_week_title_height">16dp</dimen>
+    <dimen name="calendar_day_of_week_title_text_size">12dp</dimen>
+    <dimen name="calendar_title_height">50dp</dimen>
+    <dimen name="calendar_title_padding_left">10dip</dimen>
+    <dimen name="calendar_title_text_size">20dp</dimen>
+    <!-- From: file:/Users/junhzhan/workspace/Cal/res/values/strings.xml -->
+    <eat-comment />
+
+    <string name="app_name">Cal</string>
+    <string name="chinese_month">月</string>
+    <!-- From: file:/Users/junhzhan/workspace/Cal/res/values/style.xml -->
+    <eat-comment />
+
+    <style name="BackgroundWithAnimation">
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+</resources>

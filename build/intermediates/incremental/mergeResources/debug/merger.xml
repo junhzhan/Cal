@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merger version="2" >
+
+    <dataSet config="main" >
+        <source path="/Users/junhzhan/workspace/Cal/res" >
+            <file
+                name="left_out_anim"
+                path="/Users/junhzhan/workspace/Cal/res/anim/left_out_anim.xml"
+                qualifiers=""
+                type="anim" />
+            <file
+                name="right_in_anim"
+                path="/Users/junhzhan/workspace/Cal/res/anim/right_in_anim.xml"
+                qualifiers=""
+                type="anim" />
+            <file
+                name="hourglass"
+                path="/Users/junhzhan/workspace/Cal/res/drawable-hdpi/hourglass.png"
+                qualifiers="hdpi-v4"
+                type="drawable" />
+            <file
+                name="ic_launcher"
+                path="/Users/junhzhan/workspace/Cal/res/drawable-hdpi/ic_launcher.png"
+                qualifiers="hdpi-v4"
+                type="drawable" />
+            <file
+                name="ic_launcher"
+                path="/Users/junhzhan/workspace/Cal/res/drawable-mdpi/ic_launcher.png"
+                qualifiers="mdpi-v4"
+                type="drawable" />
+            <file
+                name="ic_launcher"
+                path="/Users/junhzhan/workspace/Cal/res/drawable-xhdpi/ic_launcher.png"
+                qualifiers="xhdpi-v4"
+                type="drawable" />
+            <file
+                name="ic_launcher"
+                path="/Users/junhzhan/workspace/Cal/res/drawable-xxhdpi/ic_launcher.png"
+                qualifiers="xxhdpi-v4"
+                type="drawable" />
+            <file
+                path="/Users/junhzhan/workspace/Cal/res/values/dimen.xml"
+                qualifiers="" >
+                <dimen name="calendar_title_height" >50dp
+                </dimen>
+                <dimen name="calendar_day_of_week_title_text_size" >12dp
+                </dimen>
+                <dimen name="calendar_date_text_size" >26dp
+                </dimen>
+                <dimen name="calendar_title_padding_left" >10dip
+                </dimen>
+                <dimen name="calendar_title_text_size" >20dp
+                </dimen>
+                <dimen name="calendar_day_of_week_title_height" >16dp
+                </dimen>
+            </file>
+            <file
+                path="/Users/junhzhan/workspace/Cal/res/values/strings.xml"
+                qualifiers="" >
+                <string name="chinese_month" >月
+                </string>
+                <string name="app_name" >Cal
+                </string>
+            </file>
+            <file
+                path="/Users/junhzhan/workspace/Cal/res/values/style.xml"
+                qualifiers="" >
+
+                <style name="BackgroundWithAnimation" >
+                    <item name="android:windowNoTitle">
+true
+                    </item>
+                </style>
+            </file>
+        </source>
+        <source path="/Users/junhzhan/workspace/Cal/build/generated/res/rs/debug" />
+        <source path="/Users/junhzhan/workspace/Cal/build/generated/res/generated/debug" />
+    </dataSet>
+    <dataSet config="debug" >
+        <source path="/Users/junhzhan/workspace/Cal/build-types/debug/res" />
+    </dataSet>
+
+</merger>
