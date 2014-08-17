@@ -47,7 +47,7 @@ public abstract class CalendarWidget<T> extends LinearLayout {
     private int mActualDate;
     
     
-    private CustomFrameLayout mScrollableContainer;
+    private ScrollContainer mScrollableContainer;
     private View mResizableContainer;
     private ViewPager mCalendarPager;
     
@@ -158,12 +158,12 @@ public abstract class CalendarWidget<T> extends LinearLayout {
         }
         addView(bar, LayoutParams.MATCH_PARENT, getResources().getDimensionPixelOffset(R.dimen.calendar_title_height));
         addView(dayTitleContainer, LayoutParams.MATCH_PARENT, getResources().getDimensionPixelOffset(R.dimen.calendar_day_of_week_title_height));
-        CustomFrameLayout scrollContainer = new CustomFrameLayout(ctx);
-        addView(scrollContainer, LayoutParams.MATCH_PARENT, calViewHeight);
+        ScrollContainer scrollContainer = new ScrollContainer(ctx);
+        addView(scrollContainer, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         mScrollableContainer = scrollContainer;
         LinearLayout resizeContainer = new LinearLayout(ctx);
         resizeContainer.setBackgroundColor(getResources().getColor(android.R.color.white));
-        scrollContainer.addView(resizeContainer, LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+        scrollContainer.addView(resizeContainer, LayoutParams.MATCH_PARENT, calViewHeight);
         mCalendarPager = new ViewPager(ctx);
         mAdapter = new CalendarPagerAdapter();
         mCalendarPager.setAdapter(mAdapter);
@@ -171,6 +171,17 @@ public abstract class CalendarWidget<T> extends LinearLayout {
         mCalendarPager.setOnPageChangeListener(mPageChangeListener);
         resizeContainer.addView(mCalendarPager, LayoutParams.MATCH_PARENT, calViewHeight);
         mResizableContainer = resizeContainer;
+    }
+    
+    public void setExtraView(View view, int width, int height) {
+        if (height == LayoutParams.MATCH_PARENT && getLayoutParams().height == LayoutParams.WRAP_CONTENT) {
+            throw new IllegalStateException("extra view is match parent but CalendarWidget is wrap content");
+        }
+        if (height == LayoutParams.MATCH_PARENT) {
+            mScrollableContainer.getLayoutParams().height = LayoutParams.MATCH_PARENT;
+        }
+        ExtraContainer container = new ExtraContainer(getContext(), view);
+        mScrollableContainer.addView(container, width, height);
     }
 
 
@@ -244,6 +255,15 @@ public abstract class CalendarWidget<T> extends LinearLayout {
         return mEventsMap.get(item);
     }
     
+    
+    /**
+     * update calendar view manually
+     */
+    public void updateView() {
+        mAdapter.mDataChanged = true;
+        mAdapter.finishUpdate(null);
+    }
+    
     /**
      * get currently selected date
      * @return
@@ -252,7 +272,36 @@ public abstract class CalendarWidget<T> extends LinearLayout {
         return mAdapter.getCurrentDate();
     }
     
-    private class CustomFrameLayout extends FrameLayout {
+    
+    private class ExtraContainer extends FrameLayout {
+        public ExtraContainer(Context ctx, View content) {
+            super(ctx);
+            addView(content, LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+        }
+
+        @Override
+        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            if (mExtraNeedLayout) {
+                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            }
+        }
+
+        @Override
+        protected void onLayout(boolean changed, int left, int top, int right,
+                int bottom) {
+            Log.e("ExtraContainer", "onLayout");
+            if (mExtraNeedLayout) {
+                Log.e("ExtraContainer", "child layout");
+                super.onLayout(changed, left, top, right, bottom);
+            }
+        }
+        
+        
+    }
+    
+    private boolean mExtraNeedLayout = true;
+    
+    private class ScrollContainer extends LinearLayout {
 
         
         private float mDownPointY;
@@ -264,9 +313,39 @@ public abstract class CalendarWidget<T> extends LinearLayout {
         private float mDeltaY;
         private float mAutoScrollDelta;
         private int mTargetRow;
-        public CustomFrameLayout(Context context) {
+        public ScrollContainer(Context context) {
             super(context);
+            setOrientation(VERTICAL);
         }
+        
+        
+        
+
+        @Override
+        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            if (getChildCount() > 2) {
+                throw new IllegalStateException("child count is not correct");
+            }
+            
+            View extraChild = getChildAt(1);
+            if (extraChild != null && extraChild.getLayoutParams().height == LayoutParams.MATCH_PARENT) {
+                extraChild.getLayoutParams().height = extraChild.getMeasuredHeight();
+                requestLayout();
+            }
+            
+            if (getLayoutParams().height == LayoutParams.WRAP_CONTENT) {
+                int totalHeight = 0;
+                for (int i = 0;i < getChildCount();i++) {
+                    View child = getChildAt(i);
+                    totalHeight += child.getMeasuredHeight();
+                }
+                getLayoutParams().height = totalHeight;
+                requestLayout();
+            }
+        }
+        
+        
 
         @Override
         public boolean onInterceptTouchEvent(MotionEvent ev) {
@@ -332,6 +411,7 @@ public abstract class CalendarWidget<T> extends LinearLayout {
         
         private void scroll(float deltaY, boolean auto) {
             if (auto) {
+                mExtraNeedLayout = false;
                 Log.e(TAG, "auto scroll deltay " + deltaY);
             }
             if (deltaY > 0) {
@@ -427,6 +507,7 @@ public abstract class CalendarWidget<T> extends LinearLayout {
     }
     
     private void onExpanded() {
+        mExtraNeedLayout = true;
         mHandler.post(new Runnable() {
             
             @Override
@@ -438,6 +519,7 @@ public abstract class CalendarWidget<T> extends LinearLayout {
     
     private void onUnExpanded() {
         Log.e(TAG, "onUnExpanded");
+        mExtraNeedLayout = true;
         mHandler.post(new Runnable() {
             
             @Override
@@ -738,6 +820,10 @@ public abstract class CalendarWidget<T> extends LinearLayout {
                 Calendar cal = new GregorianCalendar(mCurrentWeekViewDate.year, mCurrentWeekViewDate.month, mCurrentWeekViewDate.date);
                 cal.add(Calendar.DATE, 7);
                 mCurrentWeekViewDate = new WeekViewData(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DATE));
+                if (mOutListener != null) {
+                    CalendarDayItem item = new CalendarDayItem(mCurrentWeekViewDate.year, mCurrentWeekViewDate.month, mCurrentWeekViewDate.date);
+                    mOutListener.onCalendarDateSelected(item, mEventsMap.get(item));
+                }
                 cal.add(Calendar.DATE, 7);
                 mNextWeekViewDate = new WeekViewData(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DATE));
             } else {
@@ -752,6 +838,10 @@ public abstract class CalendarWidget<T> extends LinearLayout {
                     mCurrent = new Data(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 1);
                 } else {
                     mCurrent = new Data(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), mCurrent.date);
+                }
+                if (mOutListener != null) {
+                    CalendarDayItem item = new CalendarDayItem(mCurrent.year, mCurrent.month, mCurrent.date);
+                    mOutListener.onCalendarDateSelected(item, mEventsMap.get(item));
                 }
                 cal.add(Calendar.MONTH, 1);
                 mNext = new Data(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 1);
@@ -773,6 +863,10 @@ public abstract class CalendarWidget<T> extends LinearLayout {
                 cal.add(Calendar.DATE, -7);
                 mCurrentWeekViewDate = new WeekViewData(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 
                         cal.get(Calendar.DATE));
+                if (mOutListener != null) {
+                    CalendarDayItem item = new CalendarDayItem(mCurrentWeekViewDate.year, mCurrentWeekViewDate.month, mCurrentWeekViewDate.date);
+                    mOutListener.onCalendarDateSelected(item, mEventsMap.get(item));
+                }
                 cal.add(Calendar.DATE, -7);
                 mPreWeekViewDate = new WeekViewData(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 
                         cal.get(Calendar.DATE));
@@ -787,6 +881,10 @@ public abstract class CalendarWidget<T> extends LinearLayout {
                     mCurrent = new Data(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 1);
                 } else {
                     mCurrent = new Data(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), mCurrent.date);
+                }
+                if (mOutListener != null) {
+                    CalendarDayItem item = new CalendarDayItem(mCurrent.year, mCurrent.month, mCurrent.date);
+                    mOutListener.onCalendarDateSelected(item, mEventsMap.get(item));
                 }
                 cal.add(Calendar.MONTH, -1);
                 mPre = new Data(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), 1);    

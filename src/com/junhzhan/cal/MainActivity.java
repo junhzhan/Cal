@@ -3,11 +3,22 @@ import java.util.HashMap;
 import java.util.List;
 
 import android.app.Activity;
+import android.content.Context;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.AbsListView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.TextView;
 
 import com.example.cal.R;
 import com.junhzhan.cal.widget.CalendarDayItem;
+import com.junhzhan.cal.widget.CustomCalendarWidget;
 import com.junhzhan.cal.widget.OnCalendarDateSelectedListener;
 
 
@@ -65,9 +76,35 @@ public class MainActivity extends Activity {
 //        root.addView(unexpand, LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
 //        setContentView(root);
         setContentView(R.layout.main);
+        CustomCalendarWidget calendar = (CustomCalendarWidget)findViewById(R.id.calendar);
+        ListView list = new ListView(this);
+        TestAdapter adapter = new TestAdapter(this);
+        adapter.addAll("1", "2", "3", "4");
+        list.setAdapter(adapter);
+        calendar.setExtraView(list, LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+        list.setBackgroundColor(0xffff0000);
         
     }
     
+    private class TestAdapter extends ArrayAdapter<String> {
+        TestAdapter(Context ctx) {
+            super(ctx, 0);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            if (convertView == null) {
+                TextView textView = new TextView(getContext());
+                textView.setGravity(Gravity.CENTER_VERTICAL);
+                convertView = textView;
+                convertView.setLayoutParams(new AbsListView.LayoutParams(LayoutParams.MATCH_PARENT, 200));
+            }
+            ((TextView)convertView).setText(getItem(position));
+            return convertView;
+        }
+        
+        
+    }
     
     
     private OnCalendarDateSelectedListener<String> mListener = new OnCalendarDateSelectedListener<String>() {
