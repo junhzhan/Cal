@@ -159,6 +159,7 @@ public abstract class CalendarWidget<T> extends LinearLayout {
         addView(bar, LayoutParams.MATCH_PARENT, getResources().getDimensionPixelOffset(R.dimen.calendar_title_height));
         addView(dayTitleContainer, LayoutParams.MATCH_PARENT, getResources().getDimensionPixelOffset(R.dimen.calendar_day_of_week_title_height));
         ScrollContainer scrollContainer = new ScrollContainer(ctx);
+        scrollContainer.setBackgroundColor(getResources().getColor(android.R.color.holo_orange_dark));
         addView(scrollContainer, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         mScrollableContainer = scrollContainer;
         LinearLayout resizeContainer = new LinearLayout(ctx);
@@ -284,6 +285,7 @@ public abstract class CalendarWidget<T> extends LinearLayout {
             if (mExtraNeedLayout) {
                 super.onMeasure(widthMeasureSpec, heightMeasureSpec);
             }
+            setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());
         }
 
         @Override
@@ -397,6 +399,7 @@ public abstract class CalendarWidget<T> extends LinearLayout {
                 scroll(mAutoScrollDelta, true);
                 break;
             }
+            Log.d("onTouchEvent", log);
             mLastPointY = event.getY();
             return true;
         }

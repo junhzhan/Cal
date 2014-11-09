@@ -77,12 +77,6 @@ public class MainActivity extends Activity {
 //        setContentView(root);
         setContentView(R.layout.main);
         CustomCalendarWidget calendar = (CustomCalendarWidget)findViewById(R.id.calendar);
-        ListView list = new ListView(this);
-        TestAdapter adapter = new TestAdapter(this);
-        adapter.addAll("1", "2", "3", "4");
-        list.setAdapter(adapter);
-        calendar.setExtraView(list, LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
-        list.setBackgroundColor(0xffff0000);
         
     }
     
