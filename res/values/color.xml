@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="event_listitem_header_textcolor">#000000</color>
+    <color name="selection_date_bg_color">#fff44336</color>
+    <color name="selection_date_textcolor">#ffffffff</color>
+    <color name="calendar_view_divider_color">#ffcccccc</color>
+    <color name="calendar_view_main_textcolor">#ff000000</color>
+    <color name="calendar_view_alt_textcolor">#ffdbdbdb</color>
+    <color name="calendar_view_custom_event_line_color">#ff9fa8da</color>
+    <color name="calendar_view_sync_event_line_color">#ffe57373</color>
+    <color name="week_day_title_textcolor">#ff333333</color>
+    <color name="month_title_textcolor">#ffd32e00</color>
+    <color name="picker_action_button_text_color">#ffff0000</color>
+</resources>

@@ -1,11 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
-    <dimen name="calendar_date_text_size">26dp</dimen>
-    <dimen name="calendar_title_text_size">20dp</dimen>
+    <dimen name="calendar_date_text_size">18dp</dimen>
+    <dimen name="calendar_month_title_text_size">20dp</dimen>
     <dimen name="calendar_day_of_week_title_text_size">12dp</dimen>
-    <dimen name="calendar_title_height">50dp</dimen>
+    <dimen name="calendar_month_title_bar_height">50dp</dimen>
     <dimen name="calendar_day_of_week_title_height">16dp</dimen>
-    <dimen name="calendar_title_padding_left">10dip</dimen>
+    <dimen name="calendar_month_title_margin_left">10dip</dimen>
     <dimen name="calendar_date_line_segment_length">10dip</dimen>
     <dimen name="calendar_date_line_strok_width">2dip</dimen>
+    <dimen name="event_listitem_header_height">50dip</dimen>
+    <dimen name="event_listitem_header_paddingleft">10dip</dimen>
+    
+    <dimen name="calendar_view_divider_width">1px</dimen>
+    <dimen name="calendar_view_event_line_margin">4dp</dimen>
+    <dimen name="calendar_view_event_line_width">3dp</dimen>
+    <dimen name="action_bar_height">50dp</dimen>
+    <dimen name="calendar_month_title_triangle_margin_bottom">4dp</dimen>
+    <dimen name="calendar_picker_listitem_height">40dip</dimen>
+    <dimen name="calendar_picker_actionbar_height">45dip</dimen>
+    <dimen name="calendar_month_title_container_width">120dp</dimen>
+    <dimen name="calendar_picker_list_height">280dip</dimen>
 </resources>

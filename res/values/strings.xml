@@ -2,4 +2,21 @@
 
     <string name="app_name">Cal</string>
     <string name="chinese_month">月</string>
+    
+    <string-array name="week_day_titles">
+        <item>周日</item>
+        <item>周一</item>
+        <item>周二</item>
+        <item>周三</item>
+        <item>周四</item>
+        <item>周五</item>
+        <item>周六</item>
+    </string-array>
+    
+    <string name="month_title">%1$d年%2$d月</string>
+    <string name="today">今天</string>
+    <string name="calendar_page_title">日历</string>
+    <string name="calendar_picker_close_action">关闭</string>
+    <string name="calendar_picker_confirm_action">确认</string>
+    <string name="image_content_description">image</string>
 </resources>
