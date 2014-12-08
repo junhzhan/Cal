@@ -103,6 +103,7 @@ public class MainActivity extends Activity {
                 int month = mMonthScrollListener.getCurrentTargetPosition() - SCROLL_BUFFER_COUNT + Calendar.JANUARY;
                 int date = mDateScrollListener.getCurrentTargetPosition() -SCROLL_BUFFER_COUNT + 1;
                 mCalendar.setDate(year, month, date);
+                setTitle(year, month, date);
                 dismissDatePicker();
                 break;
             default:
@@ -350,6 +351,19 @@ public class MainActivity extends Activity {
             mYearList = (ListView)picker.findViewById(R.id.year_list);
             mYearScrollListener = new ListScrollListener();
             mYearList.setOnScrollListener(mYearScrollListener);
+            mYearScrollListener.setOnTargetItemChangedListener(new OnTargetItemChangedListener() {
+                
+                @Override
+                public void onTargetItemChanged(int newTargetPosition, int oldTargetPosition) {
+                    int targetYear = newTargetPosition - SCROLL_BUFFER_COUNT + Constant.START_YEAR;
+                    if (targetYear >= Constant.START_YEAR && targetYear <= Constant.END_YEAR) {
+                        int month = mMonthScrollListener.getCurrentTargetPosition() - SCROLL_BUFFER_COUNT + Calendar.JANUARY;
+                        Calendar cal = new GregorianCalendar(targetYear, month, 1);
+                        int maximumDate = cal.getActualMaximum(Calendar.DATE);
+                        mDateAdapter.setEnd(maximumDate);
+                    }
+                }
+            });
             mYearList.setAdapter(mYearAdapter);
             mMonthList = (ListView)picker.findViewById(R.id.month_list);
             mMonthList.setAdapter(mMonthAdapter);
@@ -360,9 +374,10 @@ public class MainActivity extends Activity {
                 public void onTargetItemChanged(int newTargetPosition, int oldTargetPosition) {
                     int targetMonth = Calendar.JANUARY + newTargetPosition - SCROLL_BUFFER_COUNT;
                     if (targetMonth >= Calendar.JANUARY && targetMonth <= Calendar.DECEMBER) {
-                        Calendar cal = new GregorianCalendar(Constant.START_YEAR, targetMonth, 1);
-                        int maxiumDate = cal.getActualMaximum(Calendar.DATE);
-                        mDateAdapter.setEnd(maxiumDate);
+                        int year = mYearScrollListener.getCurrentTargetPosition() - SCROLL_BUFFER_COUNT + Constant.START_YEAR; 
+                        Calendar cal = new GregorianCalendar(year, targetMonth, 1);
+                        int maximumDate = cal.getActualMaximum(Calendar.DATE);
+                        mDateAdapter.setEnd(maximumDate);
                     }
                 }
             });

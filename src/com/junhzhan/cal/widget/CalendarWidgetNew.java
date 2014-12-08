@@ -1,6 +1,5 @@
 package com.junhzhan.cal.widget;
 
-import java.nio.channels.IllegalBlockingModeException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -15,26 +14,18 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewGroup.LayoutParams;
-import android.view.animation.Animation;
-import android.view.animation.Animation.AnimationListener;
-import android.view.animation.AnimationUtils;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.BaseAdapter;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.example.cal.R;
@@ -122,7 +113,6 @@ public class CalendarWidgetNew extends LinearLayout {
         
         /* main part */
         ScrollContainer scrollContainer = new ScrollContainer(getContext());
-        scrollContainer.setBackgroundColor(getResources().getColor(android.R.color.holo_orange_dark));
         LinearLayout resizeContainer = new LinearLayout(getContext());
         resizeContainer.setBackgroundColor(getResources().getColor(android.R.color.white));
         scrollContainer.addView(resizeContainer, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
@@ -195,9 +185,6 @@ public class CalendarWidgetNew extends LinearLayout {
     public void setDate(int year, int month, int date) {
         mAdapter.setDate(year, month, date);
         mList.setDate(new CalendarItem(year, month, date));
-        if (mOutListener != null) {
-            mOutListener.onCalendarDateSelected(new CalendarItem(year, month, date));
-        }
     }
     
     
@@ -329,7 +316,7 @@ public class CalendarWidgetNew extends LinearLayout {
                 if (mProcessActionDown) {
                     break;
                 }
-                if (mDeltaY > 0) {
+                if (mResizableContainer.getHeight() - getScrollY() > mRowHeight * CalendarViewEfficient.ROW_COUNT / 2) {
                     mAutoScrollDelta = 15;
                 } else {
                     mAutoScrollDelta = -15;
@@ -400,7 +387,7 @@ public class CalendarWidgetNew extends LinearLayout {
                     }
                 } else {
                     Log.e(TAG, "resize container height " + mResizableContainer.getHeight());
-                    if (mResizableContainer.getHeight() > (mTargetRow + 1) * mRowHeight) {
+                    if (mResizableContainer.getHeight() >= (mTargetRow + 1) * mRowHeight) {
                         if ((mResizableContainer.getHeight() + (int)deltaY) <= (mTargetRow + 1) * mRowHeight) {
                             mResizableContainer.getLayoutParams().height = (mTargetRow + 1) * mRowHeight;
                             mResizableContainer.requestLayout();
@@ -744,9 +731,6 @@ public class CalendarWidgetNew extends LinearLayout {
             public void onCalendarDateSelected(CalendarItem item) {
                 setDate(item.year, item.month, item.date);
                 mList.setDate(item);
-                if (mOutListener != null) {
-                    mOutListener.onCalendarDateSelected(item);
-                }
             }
         };
         
@@ -765,6 +749,9 @@ public class CalendarWidgetNew extends LinearLayout {
         }
         
         public void setDate(int year, int month, int date) {
+            if (mOutListener != null) {
+                mOutListener.onCalendarDateSelected(new CalendarItem(year, month, date));
+            }
             if (mIsWeekView) {
                 WeekViewData weekDate = new WeekViewData(year, month, date);
                 if (mCurrentWeekViewDate != null && mCurrentWeekViewDate.getKey() == weekDate.getKey()) {
