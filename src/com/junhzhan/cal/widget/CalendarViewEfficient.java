@@ -12,6 +12,7 @@ import android.graphics.Paint.Cap;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.text.TextPaint;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -39,7 +40,8 @@ public class CalendarViewEfficient extends View {
     private int mDate;
     private CalendarItem[] mData;
     
-
+    private int mOldDate;
+    
     private int mMainColor;
     private int mAltColor;
     
@@ -55,6 +57,7 @@ public class CalendarViewEfficient extends View {
     private HashMap<CalendarItem, EventItem> mEvents;
     
     private static final int MAX_EVENT_COUNT = 8;
+    private static final int MOVE_STEP = 10;
     
     private Drawable mSelectionBg;
     private int mDividerColor;
@@ -63,6 +66,9 @@ public class CalendarViewEfficient extends View {
     private int mSyncEventColor;
     private int mEventLineMargin;
     private float mEventLineWidth;
+    
+    private int mHighlightTop;
+    private int mHighlightLeft;
     
     
     public CalendarViewEfficient(Context context) {
@@ -157,6 +163,9 @@ public class CalendarViewEfficient extends View {
 
 
     public void setMonthView(int year, int month, int date) {
+        mOldDate = mDate;
+        mHighlightLeft = 0;
+        mHighlightTop = 0;
         mIsWeekView = false;
         mYear = year;
         mMonth = month;
@@ -169,6 +178,9 @@ public class CalendarViewEfficient extends View {
         if (weekRow < 0 || weekRow >= ROW_COUNT) {
             throw new IllegalArgumentException("target row must be in [0, ROW_CONUT)");
         }
+        mOldDate = mDate;
+        mHighlightLeft = 0;
+        mHighlightTop = 0;
         mIsWeekView = true;
         mYear = year;
         mMonth = month;
@@ -245,6 +257,10 @@ public class CalendarViewEfficient extends View {
             float x = horizontalPadding + (column - 1) * mDividerWidth + column * cellWidth;
             canvas.drawLine(x, 0, x, height, mPaint);
         }
+        int currentLeft = 0;
+        int currentTop = 0;
+        int oldLeft = 0;
+        int oldTop = 0;
         for (int row = 0;row < ROW_COUNT;row++) {
             for (int column = 0;column < COLUMN_COUNT;column++) {
                 CalendarItem item = mData[row * COLUMN_COUNT + column];
@@ -261,14 +277,16 @@ public class CalendarViewEfficient extends View {
                      * Below code should be more flexible
                      */
                     if (item.date == mDate) {
-                        mSelectionBg.setBounds(cellLeft, cellTop, cellLeft + cellWidth, cellTop + cellHeight);
-                        mSelectionBg.draw(canvas);
-                        mPaint.setColor(getResources().getColor(R.color.selection_date_textcolor));
-                        customEventColor = mPaint.getColor();
-                        syncEventColor = mPaint.getColor();
+                        currentLeft = cellLeft;
+                        currentTop = cellTop;
                     } else {
-                        mPaint.setColor(mMainColor);
+                        if (item.date == mOldDate) {
+                            oldLeft = cellLeft;
+                            oldTop = cellTop;
+                        }
                     }
+                    mPaint.setColor(mMainColor);
+                    
                 }
                 canvas.drawText(String.valueOf(item.date), centerX, centerY + mRect.height() / 2.0f, mPaint);
                 EventItem eventItem = mEvents.get(item);
@@ -306,6 +324,39 @@ public class CalendarViewEfficient extends View {
                                 cellLeft + mEventLineMargin * 2 + customWidth + syncWidth, yPos, mPaint);
                     }
                 }
+            }
+        }
+        
+        if (currentLeft != 0 && currentTop != 0) {
+            Log.e(TAG, "current left and top not 0");
+            if (oldLeft != 0 || oldTop != 0) {
+                if (mHighlightLeft == 0) {
+                    mHighlightLeft = oldLeft;
+                }
+                if (mHighlightTop == 0) {
+                    mHighlightTop = oldTop;
+                }
+                float deltaX = (currentLeft - oldLeft) * 1.0f / MOVE_STEP;
+                float deltaY = (currentTop - oldTop) * 1.0f / MOVE_STEP;
+                if (mHighlightLeft != currentLeft || mHighlightTop != currentTop) {
+                    if (Math.abs(mHighlightLeft - oldLeft + deltaX) > Math.abs(currentLeft - oldLeft) || 
+                            Math.abs(mHighlightTop - oldTop + deltaY) > Math.abs(currentTop - oldTop)) {
+                        mHighlightLeft = currentLeft;
+                        mHighlightTop = currentTop;
+                    } else {
+                        mHighlightLeft += deltaX;
+                        mHighlightTop += deltaY;
+                    }
+                    mSelectionBg.setBounds(mHighlightLeft, mHighlightTop, mHighlightLeft + cellWidth, mHighlightTop + cellHeight);
+                    mSelectionBg.draw(canvas);
+                    invalidate();
+                } else {
+                    mSelectionBg.setBounds(mHighlightLeft, mHighlightTop, mHighlightLeft + cellWidth, mHighlightTop + cellHeight);
+                    mSelectionBg.draw(canvas);
+                }
+            } else {
+                mSelectionBg.setBounds(currentLeft, currentTop, currentLeft + cellWidth, currentTop + cellHeight);
+                mSelectionBg.draw(canvas);
             }
         }
     }

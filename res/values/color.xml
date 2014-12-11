@@ -2,7 +2,6 @@
 <resources>
     <color name="event_listitem_header_textcolor">#000000</color>
     <color name="selection_date_bg_color">#fff44336</color>
-    <color name="selection_date_textcolor">#ffffffff</color>
     <color name="calendar_view_divider_color">#ffcccccc</color>
     <color name="calendar_view_main_textcolor">#ff000000</color>
     <color name="calendar_view_alt_textcolor">#ffdbdbdb</color>
