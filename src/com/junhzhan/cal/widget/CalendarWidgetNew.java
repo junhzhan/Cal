@@ -1,10 +1,15 @@
 package com.junhzhan.cal.widget;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -15,6 +20,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.SparseIntArray;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -32,6 +38,7 @@ import com.example.cal.R;
 import com.junhzhan.cal.Constant;
 import com.junhzhan.cal.data.CalendarItem;
 import com.junhzhan.cal.data.CustomEvent;
+import com.junhzhan.cal.data.Event;
 import com.junhzhan.cal.data.EventItem;
 import com.junhzhan.cal.data.SyncEvent;
 
@@ -56,6 +63,7 @@ public class CalendarWidgetNew extends LinearLayout {
     private int mFocusedRow;
     
     private OnCalendarDateSelectedListener mOutListener;
+    private OnEventListScrollListener mEventListScrollListener;
     
     private ViewPager mCalendarPager;
     
@@ -65,9 +73,16 @@ public class CalendarWidgetNew extends LinearLayout {
     
     private boolean mExtraNeedLayout = true;
     
+    private EventAdapter mEventAdapter;
+    
     private EventListView mList;
     
+    private int mListPositionDelta;
+    
     private HashMap<CalendarItem, EventItem> mEvents = new HashMap<CalendarItem, EventItem>();
+    
+    private HashMap<CalendarItem, Set<Integer>> mHasExtraItems = new HashMap<CalendarItem, Set<Integer>>();
+    
 
     public CalendarWidgetNew(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
@@ -134,57 +149,113 @@ public class CalendarWidgetNew extends LinearLayout {
         list.setDividerHeight(0);
         list.setOnScrollListener(mListScrollListener);
         mList = list;
+        mEventAdapter = eventAdatper;
         final CalendarItem item = new CalendarItem(mActualYear, mActualMonth, mActualDate);
         mScrollableContainer.addView(list, LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
-        mHandler.post(new Runnable() {
-            
-            @Override
-            public void run() {
-                list.setDate(item);
-            }
-        });
-        
+        list.setDate(item);
     }
+    
+    
     
     
     public void setOnCalendarDateSelectedListener(OnCalendarDateSelectedListener l) {
         mOutListener = l;
     }
     
+    /**
+     * add custom events to specified date
+     * @param year
+     * @param month
+     * @param date
+     * @param events
+     */
     public void addCustomEvent(int year, int month, int date, List<CustomEvent> events) {
+        CalendarItem item = new CalendarItem(year, month, date);
+        checkDateValid(item);
         if (events == null) {
             return;
         }
-        CalendarItem item = new CalendarItem(year, month, date);
+        
         EventItem eventItem = mEvents.get(item);
         if (eventItem == null) {
             eventItem = new EventItem();
             mEvents.put(item, eventItem);
         }
+        int firstVisiblePosition = mList.getFirstVisiblePosition();
+        ItemInfo info = mEventAdapter.getItemInfo(firstVisiblePosition);
+        if (info.date.hashCode() > item.hashCode()) {
+            if (eventItem.getCustomEventCount() + eventItem.getSyncEventCount() > 0) {
+                mListPositionDelta += events.size();
+            } else {
+                mListPositionDelta += events.size() - 1;
+            }
+        }
+        
         eventItem.addCustomEvent(events);
-        mAdapter.mDataChanged = true;
-        mAdapter.notifyDataSetChanged();
     }
     
+    /**
+     * add sync event to specified date
+     * @param year
+     * @param month
+     * @param date
+     * @param events
+     */
     public void addSyncEvent(int year, int month, int date, List<SyncEvent> events) {
+        CalendarItem item = new CalendarItem(year, month, date);
+        checkDateValid(item);
         if (events == null) {
             return;
         }
-        CalendarItem item = new CalendarItem(year, month, date);
+        
         EventItem eventItem = mEvents.get(item);
         if (eventItem == null) {
             eventItem = new EventItem();
             mEvents.put(item, eventItem);
+        }
+        int firstVisiblePosition = mList.getFirstVisiblePosition();
+        ItemInfo info = mEventAdapter.getItemInfo(firstVisiblePosition);
+        if (info.date.hashCode() > item.hashCode()) {
+            if (eventItem.getCustomEventCount() + eventItem.getSyncEventCount() > 0) {
+                mListPositionDelta += events.size();
+            } else {
+                mListPositionDelta += events.size() - 1;
+            }
         }
         eventItem.addSyncEvent(events);
-        mAdapter.mDataChanged = true;
-        mAdapter.notifyDataSetChanged();
     }
     
+    /**
+     * notify data has been changed. Views reflecting the data will need to refresh themselves
+     */
+    public void notifyEventDataChanged() {
+        mAdapter.mDataChanged = true;
+        mAdapter.finishUpdate(null);
+        mEventAdapter.notifyDataSetChanged();
+    }
     
+    /**
+     * set current selected date to specified date
+     * @param year
+     * @param month
+     * @param date
+     */
     public void setDate(int year, int month, int date) {
         mAdapter.setDate(year, month, date);
         mList.setDate(new CalendarItem(year, month, date));
+    }
+    
+    private void checkDateValid(CalendarItem item) {
+        if (item.year > Constant.END_YEAR || item.year < Constant.START_YEAR) {
+            throw new IllegalArgumentException();
+        }
+        if (item.month < Calendar.JANUARY || item.month > Calendar.DECEMBER) {
+            throw new IllegalArgumentException();
+        }
+        Calendar cal = new GregorianCalendar(item.year, item.month, 1);
+        if (item.date > cal.getActualMaximum(Calendar.DATE) || item.date < 1) {
+            throw new IllegalArgumentException();
+        }
     }
     
     
@@ -230,16 +301,6 @@ public class CalendarWidgetNew extends LinearLayout {
             super(context);
             setOrientation(VERTICAL);
         }
-        
-
-        @Override
-        public boolean dispatchTouchEvent(MotionEvent ev) {
-            Log.d(TAG, "scroll dispatchTouchEvent action " + ev.getAction());
-            return super.dispatchTouchEvent(ev);
-        }
-
-
-
 
         @Override
         public boolean onInterceptTouchEvent(MotionEvent ev) {
@@ -283,6 +344,7 @@ public class CalendarWidgetNew extends LinearLayout {
                             mTargetRow = mFocusedRow;
                             intercept = true;
                         }
+                        // ListView will request disable intercept in some condition
                     }
                 }
                 
@@ -448,6 +510,8 @@ public class CalendarWidgetNew extends LinearLayout {
     }
     
     
+    
+    
     private OnScrollListener mListScrollListener = new OnScrollListener() {
         
         @Override
@@ -459,7 +523,7 @@ public class CalendarWidgetNew extends LinearLayout {
                 if (mList != null && mList.getAdapter() != null) {
                     int firstVisibleItem = mList.getFirstVisiblePosition();
                     EventAdapter eventAdapter = (EventAdapter)mList.getAdapter();
-                    CalendarItem scrolledDate = eventAdapter.getDateForPosition(firstVisibleItem);
+                    CalendarItem scrolledDate = eventAdapter.getItemInfo(firstVisibleItem).date;
                     if (mAdapter != null) {
                         Log.e(TAG, String.format("scroll to year %d month %d date %d",  scrolledDate.year, scrolledDate.month,
                                 scrolledDate.date));
@@ -473,7 +537,11 @@ public class CalendarWidgetNew extends LinearLayout {
         public void onScroll(AbsListView view, int firstVisibleItem,
                 int visibleItemCount, int totalItemCount) {
            ((EventListView)view).configureHeaderView(firstVisibleItem);
-           
+           if (mEventListScrollListener != null) {
+               CalendarItem firstVisibleDate = mEventAdapter.getItemInfo(firstVisibleItem).date;
+               CalendarItem lastVisibleDate = mEventAdapter.getItemInfo(visibleItemCount + totalItemCount - 1).date;
+               mEventListScrollListener.onScrolled(firstVisibleDate, lastVisibleDate);
+           }
             
         }
     };
@@ -524,19 +592,76 @@ public class CalendarWidgetNew extends LinearLayout {
                 return;
             }
             EventAdapter eventAdapter = (EventAdapter)adapter;
-            CalendarItem date = eventAdapter.getItem(firstVisibleItemPosition);
-            mHeaderView.setText(String.format("%d / %d / %d", date.year, date.month + 1, date.date));
+            ItemInfo info = eventAdapter.getItemInfo(firstVisibleItemPosition);
+            CalendarItem date = info.date;
+            Set<Integer> extraPositions = mHasExtraItems.get(date);
+            if (extraPositions == null) {
+                extraPositions = new HashSet<Integer>();
+            }
+            int eventCount = 0;
+            EventItem eventItem = mEvents.get(date);
+            if (eventItem == null) {
+                eventCount = 1;
+            } else {
+                eventCount = eventItem.getCustomEventCount() + eventItem.getSyncEventCount();
+            }
+            int defaultListItemHeight = getResources().getDimensionPixelOffset(R.dimen.event_listitem_height);
+            int scrolledItemHeight = 0;
+            int totalHeight = 0;
+            mHeaderView.setText(String.format("%d-%d-%d", date.year, date.month + 1, date.date));
             View firstView = getChildAt(0);
-            if (firstView != null && firstView.getTop() < 0) {
+            if (firstView != null && firstView.getTop() <= 0) {
+                int positionInDate = info.positionInDate;
+                int extraHeight = getResources().getDimensionPixelOffset(R.dimen.event_listitem_extra_height);
+                for (int i = 0;i < positionInDate;i++) {
+                    scrolledItemHeight += extraPositions.contains(i) ? defaultListItemHeight + extraHeight: defaultListItemHeight;
+                }
+                totalHeight += scrolledItemHeight;
+                for (int i = positionInDate; i < eventCount;i++) {
+                    totalHeight += extraPositions.contains(i) ? defaultListItemHeight + extraHeight: defaultListItemHeight;
+                }
+                
+                int headerHeight = getResources().getDimensionPixelOffset(R.dimen.event_listitem_header_height);
+                if (positionInDate > 0) {
+                    scrolledItemHeight += headerHeight;
+                }
+                totalHeight += headerHeight;
+                
                 mHeaderVisible = true;
-                int top = (int)(((float)firstView.getTop()) / firstView.getHeight() * mHeaderView.getMeasuredHeight());
-                int bottom = top + mHeaderView.getMeasuredHeight();
-                mHeaderView.layout(getPaddingLeft(), top, getPaddingLeft() + mHeaderView.getMeasuredWidth(), bottom);
+                int top = (int)(((float)(scrolledItemHeight - firstView.getTop())) / totalHeight * mHeaderView.getMeasuredHeight());
+                int bottom = -top + mHeaderView.getMeasuredHeight();
+                mHeaderView.layout(getPaddingLeft(), -top, getPaddingLeft() + mHeaderView.getMeasuredWidth(), bottom);
             } else {
                 mHeaderVisible = false;
             }
         }
-
+        
+        
+        public void addExtraItem(ItemInfo itemInfo) {
+            Set<Integer> positionsInDate = mHasExtraItems.get(itemInfo.date);
+            if (positionsInDate == null) {
+                positionsInDate = new HashSet<Integer>();
+                mHasExtraItems.put(itemInfo.date, positionsInDate);
+            }
+            boolean success = positionsInDate.add(itemInfo.positionInDate);
+            if (success) {
+                configureHeaderView(mList.getFirstVisiblePosition());
+            }
+        }
+        
+        public void removeExtraItem(ItemInfo itemInfo) {
+            Set<Integer> positionsInDate = mHasExtraItems.get(itemInfo.date);
+            if (positionsInDate != null) {
+                boolean success = positionsInDate.remove(itemInfo.positionInDate);
+                if (success) {
+                    if (positionsInDate.size() == 0) {
+                        mHasExtraItems.remove(itemInfo.date);
+                    }
+                    configureHeaderView(mList.getFirstVisiblePosition());
+                }
+            }
+        }
+        
         @Override
         protected void dispatchDraw(Canvas canvas) {
             super.dispatchDraw(canvas);
@@ -581,13 +706,25 @@ public class CalendarWidgetNew extends LinearLayout {
                 throw new IllegalStateException("setAdapter first");
             }
             EventAdapter eventAdapter = (EventAdapter)adapter;
-            int position = eventAdapter.getDatePosition(target);
+            int position = eventAdapter.getFirstPositionForDate(target);
             setSelection(position);
         }
         
         
     }
     
+    
+    private class ItemInfo {
+        Event event;
+        CalendarItem date;
+        int positionInDate;
+    }
+    
+    /**
+     * Adapter for event list
+     * @author junhzhan
+     *
+     */
     private class EventAdapter extends BaseAdapter {
         
         private int mCount;
@@ -601,6 +738,72 @@ public class CalendarWidgetNew extends LinearLayout {
             mCount = total;
             Log.e(TAG, "adapter count " + mCount);
         }
+        
+        private int[] mEventPosition;
+        private int[] mExtraEventCount;
+        private ArrayList<CalendarItem> mSortedItems = new ArrayList<CalendarItem>();
+        
+        private Comparator<CalendarItem> mComparator = new Comparator<CalendarItem>() {
+
+            @Override
+            public int compare(CalendarItem lhs, CalendarItem rhs) {
+                if (lhs.hashCode() < rhs.hashCode()) {
+                    return -1;
+                } else if (lhs.hashCode() > rhs.hashCode()) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        };
+        
+        @Override
+        public void notifyDataSetChanged() {
+            ArrayList<CalendarItem> sortedItems = new ArrayList<CalendarItem>();
+            Set<CalendarItem> calendarItems = mEvents.keySet();
+            sortedItems.addAll(calendarItems);
+            
+            int total = 0;
+            for (int year = Constant.START_YEAR;year <= Constant.END_YEAR;year++) {
+                Calendar cal = new GregorianCalendar(year, Calendar.JANUARY, 1);
+                int dayCountOfYear = cal.getActualMaximum(Calendar.DAY_OF_YEAR);
+                total += dayCountOfYear;
+            }
+            mCount = total;
+            Collections.sort(sortedItems, mComparator);
+            int accumulate = 0;
+            mEventPosition = new int[sortedItems.size()];
+            mExtraEventCount = new int[sortedItems.size()];
+            int i = 0;
+            for (CalendarItem item : sortedItems) {
+                int originalPos = getOriginalPositionForDate(item);
+                mEventPosition[i] = originalPos + accumulate;
+                Log.d(TAG, String.format("calendar %d %d %d, origin position %d, actual position %d", item.year, 
+                        item.month + 1, item.date, originalPos, mEventPosition[i]));
+                EventItem eventItem = mEvents.get(item);
+                int eventCount = eventItem.getCustomEventCount() + eventItem.getSyncEventCount();
+                int extraEventCount = 0;
+                if (eventCount == 0) {
+                    extraEventCount = 0;
+                } else {
+                    extraEventCount = eventCount - 1;
+                }
+                accumulate += extraEventCount;
+                mExtraEventCount[i] = extraEventCount;
+                i++;
+            }
+            mCount += accumulate;
+            mSortedItems = sortedItems;
+            super.notifyDataSetChanged();
+            Log.d(TAG, "position delta is " + mListPositionDelta);
+            int adjustPosition = mListPositionDelta + mList.getFirstVisiblePosition();
+            int offsetY = mList.getChildAt(0) == null ? 0 : mList.getChildAt(0).getTop();
+            mList.setSelectionFromTop(adjustPosition, offsetY);
+            mListPositionDelta = 0;
+        }
+
+
+
 
         @Override
         public int getCount() {
@@ -618,52 +821,145 @@ public class CalendarWidgetNew extends LinearLayout {
         public long getItemId(int position) {
             return 0;
         }
+        
+        private ItemInfo getItemInfo(int position) {
+            ItemInfo info = new ItemInfo();
+            if (mEventPosition == null || mEventPosition.length == 0) {
+                CalendarItem calendarItem = getOriginalDateForPosition(position);
+                info.positionInDate = 0;
+                info.date = calendarItem;
+                return info;
+            }
+            int index = Arrays.binarySearch(mEventPosition, position);
+            if (index >= 0) {
+                CalendarItem calendarItem = mSortedItems.get(index);
+                EventItem eventItem = mEvents.get(calendarItem);
+                info.event = eventItem.getEvents()[0];
+                info.positionInDate = 0;
+                info.date = calendarItem;
+            } else {
+                int insertIndex = -index - 1;
+                if (insertIndex == 0) {
+                    CalendarItem calendarItem = getOriginalDateForPosition(position);
+                    info.positionInDate = 0;
+                    info.date = calendarItem;
+                } else {
+                    int prePos = mEventPosition[insertIndex - 1];
+                    CalendarItem preDate = mSortedItems.get(insertIndex - 1);
+                    EventItem eventItem = mEvents.get(preDate);
+                    Event[] events = eventItem.getEvents();
+                    if (position > prePos && position < prePos + events.length) {
+                        info.date = preDate;
+                        info.positionInDate = position - prePos;
+                        info.event = events[position - prePos];
+                    } else if (position >= prePos + events.length) {
+                        info.positionInDate = 0;
+                        int accumulateExtra = 0;
+                        for (int i = 0;i <= insertIndex - 1;i++) {
+                            accumulateExtra += mExtraEventCount[i];
+                        }
+                        CalendarItem calendarItem = getOriginalDateForPosition(position - accumulateExtra);
+                        info.date = calendarItem;
+                    } else {
+                        throw new IllegalStateException();
+                    }
+                    
+                }
+            }
+            return info;
+        }
+        
+        public int getFirstPositionForDate(CalendarItem date) {
+            int index = Collections.binarySearch(mSortedItems, date, mComparator);
+            int position = 0;
+            if (index >= 0) {
+                position = mEventPosition[index];
+            } else {
+                int insertIndex = -index - 1;
+                Log.d(TAG, "first position for date insert index " + insertIndex);
+                int accumulate = 0;
+                int originalPosition = getOriginalPositionForDate(date);
+                for (int i = 0;i < insertIndex;i++) {
+                    accumulate += mExtraEventCount[i];
+                }
+                position = originalPosition + accumulate;
+                Log.d(TAG, String.format("first position for year %d, month %d, date %d, original %d, current %d", 
+                        date.year, date.month + 1, date.date, originalPosition, position));
+            }
+            return position;
+        }
+        
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            TextView header = null;
-            LinearLayout eventContainer = null;
+            ItemInfo info = getItemInfo(position);
+            Log.d(TAG, String.format("isHeaderItem %s | date year %d month %d date %d | event null %s", 
+                    String.valueOf(info.positionInDate == 0), info.date.year, info.date.month + 1, info.date.date, String.valueOf(info.event == null)));
             if (convertView == null) {
-                LinearLayout item = new LinearLayout(getContext());
+                final LinearLayout item = new LinearLayout(getContext());
                 item.setOrientation(LinearLayout.VERTICAL);
-                header = new TextView(getContext());
+                
+                TextView header = new TextView(getContext());
                 header.setTextColor(getResources().getColor(R.color.event_listitem_header_textcolor));
                 header.setGravity(Gravity.CENTER_VERTICAL);
                 header.setBackgroundResource(R.drawable.event_listview_header_bg);
                 header.setPadding(getResources().getDimensionPixelOffset(R.dimen.event_listitem_header_paddingleft), 0, 0, 0);
                 item.addView(header, LayoutParams.MATCH_PARENT, getResources().getDimensionPixelOffset(R.dimen.event_listitem_header_height));
-                LinearLayout container = new LinearLayout(getContext());
-                container.setOrientation(LinearLayout.VERTICAL);
-                item.addView(container, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-                convertView = item;
-            }
-            LinearLayout item = (LinearLayout)convertView;
-            header = (TextView)item.getChildAt(0);
-            eventContainer = (LinearLayout)item.getChildAt(1);
-            fillItemView(position, eventContainer);
-            CalendarItem date = getItem(position);
-            header.setText(String.format("%d / %d / %d", date.year, date.month + 1, date.date));
-            return convertView;
-        }
-        
-        
-        private void fillItemView(int position, LinearLayout container) {
-            View content = container.getChildAt(0);
-            if (content == null) {
                 TextView textContent = new TextView(getContext());
                 textContent.setText("No content");
                 textContent.setGravity(Gravity.CENTER_VERTICAL);
                 textContent.setBackgroundColor(0xffffffff);
-                container.addView(textContent, LayoutParams.MATCH_PARENT, getResources().getDimensionPixelOffset(R.dimen.event_listitem_header_height));
+                textContent.setTextColor(0xff000000);
+                textContent.setOnClickListener(new OnClickListener() {
+                    
+                    @Override
+                    public void onClick(View v) {
+                        ItemInfo info = (ItemInfo)v.getTag();
+                        View extra = item.getChildAt(2);
+                        if (extra.getVisibility() == View.VISIBLE) {
+                            extra.setVisibility(View.GONE);
+                            mList.removeExtraItem(info);
+                        } else {
+                            extra.setVisibility(View.VISIBLE);
+                            mList.addExtraItem(info);
+                        }
+                    }
+                });
+                item.addView(textContent, LayoutParams.MATCH_PARENT, getResources().getDimensionPixelOffset(R.dimen.event_listitem_height));
+                TextView extra = new TextView(getContext());
+                extra.setText("Extra content");
+                extra.setGravity(Gravity.CENTER_VERTICAL);
+                extra.setBackgroundColor(0xff000000);
+                extra.setTextColor(0xffffffff);
+                extra.setVisibility(View.GONE);
+                item.addView(extra, LayoutParams.MATCH_PARENT, getResources().getDimensionPixelOffset(R.dimen.event_listitem_extra_height));
+                convertView = item;
             }
+            LinearLayout item = (LinearLayout)convertView;
+            TextView header = (TextView)item.getChildAt(0);
+            if (info.positionInDate == 0) {
+                header.setVisibility(View.VISIBLE);
+                header.setText(String.format("%d-%d-%d", info.date.year, info.date.month + 1, info.date.date));
+            } else {
+                header.setVisibility(View.GONE);
+            }
+            View extra = item.getChildAt(2);
+            item.getChildAt(1).setTag(info);
+            Set<Integer> extraPositions = mHasExtraItems.get(info.date);
+            if (extraPositions == null || !extraPositions.contains(info.positionInDate)) {
+                extra.setVisibility(View.GONE);
+            } else {
+                extra.setVisibility(View.VISIBLE);
+            }
+            return convertView;
         }
         
         /**
-         * get position for specified date
+         * get original position for specified date provided that there is no event.
          * @param item
          * @return
          */
-        public int getDatePosition(CalendarItem item) {
+        public int getOriginalPositionForDate(CalendarItem item) {
             checkDateValid(item);
             int total = 0;
             Calendar cal = new GregorianCalendar();
@@ -680,20 +976,12 @@ public class CalendarWidgetNew extends LinearLayout {
             return total - 1;
         }
         
-        private void checkDateValid(CalendarItem item) {
-            if (item.year > Constant.END_YEAR || item.year < Constant.START_YEAR) {
-                throw new IllegalArgumentException();
-            }
-            if (item.month < Calendar.JANUARY || item.month > Calendar.DECEMBER) {
-                throw new IllegalArgumentException();
-            }
-            Calendar cal = new GregorianCalendar(item.year, item.month, 1);
-            if (item.date > cal.getActualMaximum(Calendar.DATE) || item.date < 1) {
-                throw new IllegalArgumentException();
-            }
-        }
-        
-        public CalendarItem getDateForPosition(int pos) {
+        /**
+         * get original date for position provided that there is no event.
+         * @param pos
+         * @return
+         */
+        public CalendarItem getOriginalDateForPosition(int pos) {
             if (pos >= getCount()) {
                 throw new IllegalArgumentException();
             }

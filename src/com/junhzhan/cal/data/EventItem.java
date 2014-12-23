@@ -54,5 +54,12 @@ public class EventItem {
         return mSyncEvents.size();
     }
     
+    public Event[] getEvents() {
+        ArrayList<Event> events = new ArrayList<Event>();
+        events.addAll(mCustomEvents);
+        events.addAll(mSyncEvents);
+        return events.toArray(new Event[events.size()]);
+    }
+    
     
 }

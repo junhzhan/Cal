@@ -1,5 +1,5 @@
 package com.junhzhan.cal.data;
 
-public class SyncEvent {
+public class SyncEvent extends Event {
 
 }

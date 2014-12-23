@@ -1,5 +1,5 @@
 package com.junhzhan.cal.data;
 
-public class CustomEvent {
+public class CustomEvent extends Event {
 
 }

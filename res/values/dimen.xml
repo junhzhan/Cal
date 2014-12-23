@@ -20,4 +20,6 @@
     <dimen name="calendar_picker_actionbar_height">45dip</dimen>
     <dimen name="calendar_month_title_container_width">120dp</dimen>
     <dimen name="calendar_picker_list_height">280dip</dimen>
+    <dimen name="event_listitem_height">80dip</dimen>
+    <dimen name="event_listitem_extra_height">50dip</dimen>
 </resources>

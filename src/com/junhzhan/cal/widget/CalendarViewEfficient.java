@@ -328,7 +328,6 @@ public class CalendarViewEfficient extends View {
         }
         
         if (currentLeft != 0 && currentTop != 0) {
-            Log.e(TAG, "current left and top not 0");
             if (oldLeft != 0 || oldTop != 0) {
                 if (mHighlightLeft == 0) {
                     mHighlightLeft = oldLeft;

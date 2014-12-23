@@ -1,4 +1,5 @@
 package com.junhzhan.cal;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -28,6 +29,7 @@ import android.widget.TextView;
 
 import com.example.cal.R;
 import com.junhzhan.cal.data.CalendarItem;
+import com.junhzhan.cal.data.CustomEvent;
 import com.junhzhan.cal.widget.CalendarWidgetNew;
 import com.junhzhan.cal.widget.OnCalendarDateSelectedListener;
 
@@ -80,6 +82,7 @@ public class MainActivity extends Activity {
         mMainPickerColor = getResources().getColor(R.color.calendar_view_main_textcolor);
         mAltPickerColor = getResources().getColor(R.color.calendar_view_alt_textcolor);
         mPickerItemHeight = getResources().getDimensionPixelOffset(R.dimen.calendar_picker_listitem_height);
+        
     }
     
     private OnClickListener mClickListener = new OnClickListener() {
@@ -88,8 +91,15 @@ public class MainActivity extends Activity {
         public void onClick(View v) {
             switch (v.getId()) {
             case R.id.today:
-                Calendar cal = new GregorianCalendar();
-                mCalendar.setDate(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DATE));
+                ArrayList<CustomEvent> customEvents = new ArrayList<CustomEvent>();
+                for (int i = 0; i < 3; i++) {
+                    customEvents.add(new CustomEvent());
+                }
+                mCalendar.addCustomEvent(2014, Calendar.DECEMBER, 12, customEvents);
+                mCalendar.addCustomEvent(2014, Calendar.DECEMBER, 15, customEvents);
+                mCalendar.notifyEventDataChanged();
+//                Calendar cal = new GregorianCalendar();
+//                mCalendar.setDate(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DATE));
                 break;
             case R.id.title_container:
                 CalendarItem item = mCalendar.getCurrentDate();
