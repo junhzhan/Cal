@@ -68,6 +68,9 @@ public class CalendarWidgetNew extends LinearLayout {
     private EventListView mList;
     
     private HashMap<CalendarItem, EventItem> mEvents = new HashMap<CalendarItem, EventItem>();
+    
+    private EventAdapter mEventAdapter;
+    private boolean mViewPagerScrolling = false;
 
     public CalendarWidgetNew(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
@@ -134,6 +137,7 @@ public class CalendarWidgetNew extends LinearLayout {
         list.setDividerHeight(0);
         list.setOnScrollListener(mListScrollListener);
         mList = list;
+        mEventAdapter = eventAdatper;
         final CalendarItem item = new CalendarItem(mActualYear, mActualMonth, mActualDate);
         mScrollableContainer.addView(list, LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         mHandler.post(new Runnable() {
@@ -162,8 +166,6 @@ public class CalendarWidgetNew extends LinearLayout {
             mEvents.put(item, eventItem);
         }
         eventItem.addCustomEvent(events);
-        mAdapter.mDataChanged = true;
-        mAdapter.notifyDataSetChanged();
     }
     
     public void addSyncEvent(int year, int month, int date, List<SyncEvent> events) {
@@ -177,8 +179,12 @@ public class CalendarWidgetNew extends LinearLayout {
             mEvents.put(item, eventItem);
         }
         eventItem.addSyncEvent(events);
+    }
+    
+    public void notifyEventDataChanged() {
         mAdapter.mDataChanged = true;
-        mAdapter.notifyDataSetChanged();
+        mAdapter.finishUpdate(null);
+        mEventAdapter.notifyDataSetChanged();
     }
     
     
@@ -234,7 +240,9 @@ public class CalendarWidgetNew extends LinearLayout {
 
         @Override
         public boolean dispatchTouchEvent(MotionEvent ev) {
-            Log.d(TAG, "scroll dispatchTouchEvent action " + ev.getAction());
+            if (mViewPagerScrolling && ev.getAction() == MotionEvent.ACTION_DOWN) {
+                return false;
+            }
             return super.dispatchTouchEvent(ev);
         }
 
@@ -358,7 +366,7 @@ public class CalendarWidgetNew extends LinearLayout {
                         }
                     }
                 } else {
-                    if (mResizableContainer.getHeight() < CalendarViewEfficient.ROW_COUNT * mRowHeight) {
+                    if (mResizableContainer.getHeight() <= CalendarViewEfficient.ROW_COUNT * mRowHeight) {
                         if ((mResizableContainer.getHeight() + deltaY) >= CalendarViewEfficient.ROW_COUNT * mRowHeight) {
                             mResizableContainer.getLayoutParams().height = CalendarViewEfficient.ROW_COUNT * mRowHeight;
                             mResizableContainer.requestLayout();
@@ -1184,6 +1192,7 @@ public class CalendarWidgetNew extends LinearLayout {
         public void onPageScrollStateChanged(int state) {
             mViewPagerScrollState = state;
             if (state == ViewPager.SCROLL_STATE_IDLE) {
+                mViewPagerScrolling = false;
                 int current = mCalendarPager.getCurrentItem();
                 if (current == 0) {
                     mHandler.post(new Runnable() {
@@ -1205,6 +1214,8 @@ public class CalendarWidgetNew extends LinearLayout {
                         }
                     });
                 }
+            } else {
+                mViewPagerScrolling = true;
             }
         }
     };
