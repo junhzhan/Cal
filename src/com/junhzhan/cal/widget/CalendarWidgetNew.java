@@ -163,9 +163,10 @@ public class CalendarWidgetNew extends LinearLayout {
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
         case MotionEvent.ACTION_DOWN:
-            if (mListViewScrolling) {
+            if (mListViewScrolling || mViewPagerScrolling) {
                 return false;
             }
+            mScrollableContainer.mTargetRow = mFocusedRow;
             break;
         case MotionEvent.ACTION_MOVE:
             float deltaY = event.getY() - mLastPointYInCalendarWidget;
@@ -275,6 +276,7 @@ public class CalendarWidgetNew extends LinearLayout {
 
         @Override
         public boolean dispatchTouchEvent(MotionEvent ev) {
+            Log.e(TAG, String.format("view pager scrolling %s, action %d", mViewPagerScrolling, ev.getAction()));
             if (mViewPagerScrolling && ev.getAction() == MotionEvent.ACTION_DOWN) {
                 return false;
             }
@@ -282,7 +284,7 @@ public class CalendarWidgetNew extends LinearLayout {
             float scrolledPositionY = ev.getY() + getScrollY();
             boolean downActioninList = scrolledPositionX >= mList.getLeft() && scrolledPositionX <= mList.getRight()
                     && scrolledPositionY >= mList.getTop() && scrolledPositionY <= mList.getBottom();
-            if (!downActioninList && mListViewScrolling) {
+            if (ev.getAction() == MotionEvent.ACTION_DOWN && !downActioninList && mListViewScrolling) {
                 return false;
             }
             
@@ -641,8 +643,6 @@ public class CalendarWidgetNew extends LinearLayout {
             int position = eventAdapter.getDatePosition(target);
             setSelection(position);
         }
-        
-        
     }
     
     private class EventAdapter extends BaseAdapter {

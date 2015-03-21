@@ -15,7 +15,6 @@ import android.text.TextPaint;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-
 import com.example.cal.R;
 import com.junhzhan.cal.data.CalendarItem;
 import com.junhzhan.cal.data.CustomEvent;
@@ -328,7 +327,6 @@ public class CalendarViewEfficient extends View {
         }
         
         if (currentLeft != 0 && currentTop != 0) {
-            Log.e(TAG, "current left and top not 0");
             if (oldLeft != 0 || oldTop != 0) {
                 if (mHighlightLeft == 0) {
                     mHighlightLeft = oldLeft;
