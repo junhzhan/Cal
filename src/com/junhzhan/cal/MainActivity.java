@@ -118,6 +118,11 @@ public class MainActivity extends Activity {
         public void onCalendarDateSelected(CalendarItem item) {
             setTitle(item.year, item.month, item.date);
         }
+
+        @Override
+        public void onCalendarDateLongPressed(CalendarItem item) {
+            
+        }
     };
     
     private void setTitle(int year, int month, int date) {

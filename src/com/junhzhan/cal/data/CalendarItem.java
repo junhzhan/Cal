@@ -59,6 +59,13 @@ public class CalendarItem {
             return -diff;
         }
     }
+
+    @Override
+    public String toString() {
+        return String.format("year : %d month : %d date : %d", year, month, date);
+    }
+    
+    
     
     
 }

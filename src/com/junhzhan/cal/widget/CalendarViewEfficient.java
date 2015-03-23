@@ -11,6 +11,7 @@ import android.graphics.Paint.Align;
 import android.graphics.Paint.Cap;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.Handler;
 import android.text.TextPaint;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -69,6 +70,8 @@ public class CalendarViewEfficient extends View {
     private int mHighlightTop;
     private int mHighlightLeft;
     
+    private Handler mHandler = new Handler();
+    
     
     public CalendarViewEfficient(Context context) {
         super(context);
@@ -112,8 +115,15 @@ public class CalendarViewEfficient extends View {
         switch (event.getAction()) {
         case MotionEvent.ACTION_DOWN:
             mDownActionTarget = resolveTouchedDate(event.getX(), event.getY());
+            if (mDownActionTarget != null) {
+                mHandler.postDelayed(mLongPressRunnable, 500);
+            }
             break;
         case MotionEvent.ACTION_MOVE:
+            CalendarItem moveTarget = resolveTouchedDate(event.getX(), event.getY());
+            if (mDownActionTarget != null && moveTarget != null && !mDownActionTarget.equals(moveTarget)) {
+                mHandler.removeCallbacks(mLongPressRunnable);
+            }
             break;
         case MotionEvent.ACTION_UP:
             CalendarItem target = resolveTouchedDate(event.getX(), event.getY());
@@ -121,6 +131,7 @@ public class CalendarViewEfficient extends View {
                     && mListener != null) {
                 mListener.onCalendarDateSelected(target);
             }
+            mHandler.removeCallbacks(mLongPressRunnable);
             break;
         case MotionEvent.ACTION_CANCEL:
             break;
@@ -129,6 +140,18 @@ public class CalendarViewEfficient extends View {
         }
         return true;
     }
+    
+    private Runnable mLongPressRunnable = new Runnable() {
+        
+        @Override
+        public void run() {
+            if (mDownActionTarget != null && mListener != null) {
+                Log.e(TAG, "LONG PRESSED " + mDownActionTarget.toString());
+                mListener.onCalendarDateLongPressed(mDownActionTarget);
+            }
+        }
+    };
+    
     
     public void resetData() {
         mYear = 0;
