@@ -293,7 +293,7 @@ public class CalendarWidgetNew extends LinearLayout {
         public boolean dispatchTouchEvent(MotionEvent ev) {
             Log.e(TAG, String.format("view pager scrolling %s, action %d", mViewPagerScrolling, ev.getAction()));
             if (mViewPagerScrolling && ev.getAction() == MotionEvent.ACTION_DOWN) {
-                return true;
+                return false;
             }
             float scrolledPositionX = ev.getX() + getScrollX();
             float scrolledPositionY = ev.getY() + getScrollY();
@@ -323,6 +323,7 @@ public class CalendarWidgetNew extends LinearLayout {
                 }
                 Log.d(TAG, "down action in list " + mDownActionInList);
                 return false;
+                
             case MotionEvent.ACTION_MOVE:
                 Log.d(TAG, String.format("scroll onIntercept x %f, y %f", ev.getX(), ev.getY()));
                 float totalDeltaY = Math.abs(ev.getY() - mDownPointY);

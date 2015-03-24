@@ -134,6 +134,7 @@ public class CalendarViewEfficient extends View {
             mHandler.removeCallbacks(mLongPressRunnable);
             break;
         case MotionEvent.ACTION_CANCEL:
+            mHandler.removeCallbacks(mLongPressRunnable);
             break;
         default:
             break;
