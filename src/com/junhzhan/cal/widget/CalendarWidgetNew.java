@@ -134,6 +134,13 @@ public class CalendarWidgetNew extends LinearLayout {
         mExtraViewContainer = new FrameLayout(getContext());
         mExtraViewContainer.setBackgroundColor(0xFFFF0000);
         mScrollableContainer.addView(mExtraViewContainer, LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+        mHandler.post(new Runnable() {
+            
+            @Override
+            public void run() {
+                mScrollableContainer.scroll(-15, true);
+            }
+        });
         
     }
     
